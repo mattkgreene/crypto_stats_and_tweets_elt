@@ -70,6 +70,15 @@ Ultimately, I choose to follow a similar process to what is in the mkg_airflow r
 
 <blockquote class="imgur-embed-pub" lang="en" data-id="a/M82fKpe"  ><a href="//imgur.com/a/M82fKpe">Udacity Capstone Project Data Model</a></blockquote>
 
+1. Data is loaded into the staging tables cg_coin_list_stg, snscrape_tweets_stg, and cg_hourly_stg on a Redshift Cluster from the S3 bucket
+2. Date information is loaded into Date Dim
+3. Data is loaded into the cg_coin_list table from cg_coin_list_stg
+4. Data is loaded into coin_stats_hist using a join between date_dim, cg_hourly_stg, and cg_coin_list using date_keys and coin names as parameters to get foreign key allocation
+5. Data is loaded into snscrape_tweets_hist using a join between date_dim, snscrape_tweets_stg and cg_coin_list using date_keys and coin names as parameters to get foreign key allocation
+
+Ultimately, this data model was chosen as the end state will be combining crypto price action with tweet sentiment to determine how the market reacts to price action.  So, we need a relationship between the crypto and tweets datasets in order to one day achieve this future state result.
+
+
 #### Steps
 
 <blockquote class="imgur-embed-pub" lang="en" data-id="a/egP96PR"  ><a href="//imgur.com/a/egP96PR">Airflow Udacity Capstone Dag</a></blockquote>
