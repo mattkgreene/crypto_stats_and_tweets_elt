@@ -58,11 +58,11 @@
 
 #### Data Model
 
-<blockquote class="imgur-embed-pub" lang="en" data-id="a/M82fKpe"  ><a href="//imgur.com/a/M82fKpe">Udacity Capstone Project Data Model</a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
+<blockquote class="imgur-embed-pub" lang="en" data-id="a/M82fKpe"  ><a href="//imgur.com/a/M82fKpe">Udacity Capstone Project Data Model</a>
 
 #### Steps
 
-<blockquote class="imgur-embed-pub" lang="en" data-id="a/egP96PR"  ><a href="//imgur.com/a/egP96PR">Airflow Udacity Capstone Dag</a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
+<blockquote class="imgur-embed-pub" lang="en" data-id="a/egP96PR"  ><a href="//imgur.com/a/egP96PR">Airflow Udacity Capstone Dag</a></blockquote>
 
 1. Create Redshift Cluster
 2. Create Crypto, Tweets, and Dim Schemas
