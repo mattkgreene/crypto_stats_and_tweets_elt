@@ -62,7 +62,7 @@
 
 #### Steps
 
-![alt text](https://imgur.com/a/egP96PR)
+<blockquote class="imgur-embed-pub" lang="en" data-id="a/egP96PR"  ><a href="//imgur.com/a/egP96PR">Airflow Udacity Capstone Dag</a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
 
 1. Create Redshift Cluster
 2. Create Crypto, Tweets, and Dim Schemas
