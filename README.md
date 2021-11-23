@@ -30,11 +30,11 @@ The original data ingestion process ran into few snafus. As I decided to use the
 
 Thus, I decided to use the snscrape tweets python library instead, which provided a much easier method to get a ton of tweets in a reasonable amount of time.
 
-Through using the snscrape tweets python library the tweets were gathered running a library function.
+Through using the snscrape tweets python library, the tweets were gathered running a library function.
 
 The tweets were than stored in a MongoDB database as an intermediary storage solution.
 
-Data was continuously ingested between using this process until enough tweets about various crypto currencies was gathered.
+Data was continuously ingested using this process until enough tweets about various crypto currencies was gathered.
 
 After storing the tweets in MongoDB the tweets were then pulled from the MongoDB database, stored in a pandas dataframe and written to the mkgpublic s3 bucket as a parquet file.
 
@@ -42,7 +42,7 @@ After storing the tweets in MongoDB the tweets were then pulled from the MongoDB
 
 Using the coingecko api, crypto currency statistical data was pulled and stored in a pandas dataframe.  
 
-After storing in the pandas df the data was written to the MongoDB database used for tweets.
+After storing the data in the pandas df, the data was written to the MongoDB database used for tweets.
 
 Data is continously ingested through this process until enough statistical data about various crypto currencies was stored.
 
@@ -52,9 +52,9 @@ I stored the data as a CSV because two sets of data formats were requested.  I o
 
 ### Crypto Stats and Tweets ELT
 
-#### Now we get into the udacity capstone data ingestion and processing part of this project.
+Now we get into the udacity capstone data ingestion and processing part of this project.
 
-#### Ultimately I choose to follow a similar process to what is in the mkg_airflow repository where I am using airflow to run a sequence of tasks.
+Ultimately, I choose to follow a similar process to what is in the mkg_airflow repository where I am using airflow to run a sequence of tasks.
 
 #### Data Model
 
@@ -89,24 +89,23 @@ I stored the data as a CSV because two sets of data formats were requested.  I o
 
 #### Some questions for future work:
 * What if the data was increased by 100x.
-  * I would use a spark emr cluster to process the data for me as that would speed up both the data ingestion and processing parts of the project.
-  * This is likely going to happen in my future steps for this process, so ultimately this will be added in future versions.
+  * I would use a spark emr cluster to process the data as that would speed up both the data ingestion and the processing parts of the project.
+  * This is likely going to happen in my future steps for this project, so ultimately this will be added in future versions.
 * What if the pipelines would be run on a daily basis by 7 am every day.
   * I need a way to get the first part of this process easier.  The issue is sometimes either the coingecko or the snscrape tweets api breaks.
-  Thus, if this pipeline would need to be run every day at 7am I would need to fix the initial data ingestion into my S3 bucket, 
-  as in, making the process more automated.  Nonetheless, if we are just referring to the S3-->Redshift-->S3 part of the process, then I would
-  set airflow to run the process daily as the initial api --> MongoDB --> S3 part of the process would be taken care of.  I would also need to add
-  in a extra step so that the pipeline combines the data previously stored in the S3 bucket with the new data added.
+  Thus, if this pipeline would need to be run every day at 7am I would need to fix the initial data ingestion into my S3 bucket, as in, making the process more automated.  
+  * Nonetheless, if we are just referring to the S3-->Redshift-->S3 part of the process, then I would set airflow to run the current elt process daily as the initial api --> MongoDB --> S3 part of the process would be taken care of.  
+  * I would also need to add in an extra step so that the pipeline combines the data that is previously stored in the S3 bucket with the new data added.
 * What if the database needed to be accessed by 100+ people.
   * If the database needs to be accessed by 100+ people than I would need to either need to:
     * constantly run a redshift cluster with the tables stored in said cluster (this requires additional IAM configuration and security protocols)
     * store the results in MongoDB so everyone can just pull from that database using pandas (requires adding everyones IP to the MongoDB Network)
-    * have users simply pull from the mkgpublic S3 Bucket (just need the S3 URI)
+    * have users simply pull from the mkgpublic S3 Bucket (just need the S3 URI) and using a platform like Databricks for users to run analysis
 
 #### Future Work
-Ultimately, I want to use these datasets built out through this datapipline in a dashboard hosted on a website.
+Ultimately, I want to use these datasets as the backend to a dashboard hosted on a website.
 
-I want to incoporate reddit data as well into the mix and then run sentiment analysis on both the tweets and reddit thread datasets to determine the current crypto market sentiment.
+I want to incoporate reddit data as well into the mix.  Afterwards, I want to run sentiment analysis on both the tweets and reddit thread datasets to determine the current crypto market sentiment.
 
 Work will be done over the next few months on the above tasks.
     
