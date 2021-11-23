@@ -116,7 +116,7 @@ Ultimately, this data model was chosen as the end state will be combining crypto
   * Nonetheless, if we are just referring to the S3-->Redshift-->S3 part of the process, then I would set airflow to run the current elt process daily as the initial api --> MongoDB --> S3 part of the process would be taken care of.  
   * I would also need to add in an extra step so that the pipeline combines the data that is previously stored in the S3 bucket with the new data added.
 * What if the database needed to be accessed by 100+ people.
-  * If the database needs to be accessed by 100+ people than I would need to either need to:
+  * If the database needs to be accessed by 100+ people than I would need to either:
     * constantly run a redshift cluster with the tables stored in said cluster (this requires additional IAM configuration and security protocols)
     * store the results in MongoDB so everyone can just pull from that database using pandas (requires adding everyones IP to the MongoDB Network)
     * have users simply pull from the mkgpublic S3 Bucket (just need the S3 URI) and using a platform like Databricks for users to run analysis
