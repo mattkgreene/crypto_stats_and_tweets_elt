@@ -58,7 +58,7 @@
 
 #### Data Model
 
-![alt text](https://imgur.com/a/M82fKpe)
+<blockquote class="imgur-embed-pub" lang="en" data-id="a/M82fKpe"  ><a href="//imgur.com/a/M82fKpe">Udacity Capstone Project Data Model</a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
 
 #### Steps
 
