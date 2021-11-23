@@ -56,6 +56,16 @@ Now we get into the udacity capstone data ingestion and processing part of this 
 
 Ultimately, I choose to follow a similar process to what is in the mkg_airflow repository where I am using airflow to run a sequence of tasks.
 
+#### Main Scripts
+
+* dags/tweets_and_crypto_etl.py
+* plugins/helpers/sql_queries.py
+* plugins/operators/stage_redshift.py
+* plugins/operators/load_dimension.py
+* plugins/operators/load_fact.py
+* plugins/helpers/analysis.py
+* plugins/operators/data_quality.py
+
 #### Data Model
 
 <blockquote class="imgur-embed-pub" lang="en" data-id="a/M82fKpe"  ><a href="//imgur.com/a/M82fKpe">Udacity Capstone Project Data Model</a></blockquote>
