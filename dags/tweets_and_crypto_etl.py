@@ -16,7 +16,7 @@ from airflow import DAG
 import time
 from airflow.operators.dummy_operator import DummyOperator
 from operators import (StageToRedshiftOperator, LoadFactOperator,
-                                LoadDimensionOperator, DataQualityOperator)
+                                LoadDimensionOperator, DataQualityOperator, NullDataQualityOperator)
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.operators.postgres_operator import PostgresOperator
@@ -215,6 +215,10 @@ create_cluster = PythonOperator(
     dag=dag
 )
 
+"""
+*** Create Schemas and Staging Tables ***
+"""
+
 create_schemas = PostgresOperator(
     task_id="create_crypto_tweets_and_dim_schemas",
     dag=dag,
@@ -229,7 +233,9 @@ create_stg_tables = PostgresOperator(
     sql=SqlQueries.create_stg_tables
 )
 
-
+"""
+*** Staging ***
+"""
 stage_cg_token_list_to_redshift = StageToRedshiftOperator(
     task_id='Stage_cg_token_list',
     dag=dag,
@@ -264,6 +270,9 @@ stage_cg_hourly_to_redshift = StageToRedshiftOperator(
     extra="delimiter '|' IGNOREHEADER 1",
 )
 
+"""
+*** Load Dimensions ***
+"""
 load_cg_coin_list_table = LoadDimensionOperator(
     task_id='Load_cg_coin_list_table',
     dag=dag,
@@ -271,13 +280,6 @@ load_cg_coin_list_table = LoadDimensionOperator(
     query=SqlQueries.cg_coin_list_insert,
     table = "crypto.cg_coin_list",
     mode="delete"
-)
-
-create_fact_tables = PostgresOperator(
-    task_id="create_fact_tables",
-    dag=dag,
-    postgres_conn_id="redshift",
-    sql=SqlQueries.create_fact_tables
 )
 
 load_date_dim_tweets_table = LoadDimensionOperator(
@@ -298,6 +300,40 @@ load_date_dim_crypto_table = LoadDimensionOperator(
     mode="append"
 )
 
+"""
+*** Run Primary Key Quality Check ***
+"""
+
+run_null_pk_date_dim_quality_check = NullDataQualityOperator(
+    task_id='run_null_pk_date_dim_quality_check',
+    dag=dag,
+    redshift_conn_id="redshift",
+    table = 'dim.date_dim',
+    values=['date_key'],
+)
+
+run_null_pk_cg_coin_list_quality_checks = NullDataQualityOperator(
+    task_id='run_null_pk_cg_coin_list_quality_checks',
+    dag=dag,
+    redshift_conn_id="redshift",
+    table = 'crypto.cg_coin_list',
+    values=['coin_key'],
+)
+
+"""
+*** Create Fact Tables ***
+"""
+create_fact_tables = PostgresOperator(
+    task_id="create_fact_tables",
+    dag=dag,
+    postgres_conn_id="redshift",
+    sql=SqlQueries.create_fact_tables
+)
+
+"""
+*** Load Fact Tables ***
+"""
+
 load_coin_stats_hist_table = LoadFactOperator(
     task_id='Load_coin_stats_hist_table',
     dag=dag,
@@ -315,6 +351,44 @@ load_snscrape_tweets_hist_table = LoadFactOperator(
     table = "tweets.snscrape_tweets_hist",
     mode="delete"
 )
+
+"""
+*** Run Foreign Key Quality Check ***
+"""
+
+run_null_fk_coin_fact_quality_checks = NullDataQualityOperator(
+    task_id='run_null_fk_coin_fact_quality_checks',
+    dag=dag,
+    redshift_conn_id="redshift",
+    table = 'crypto.coin_stats_hist',
+    values = ['coin_key','date_key']
+)
+
+run_null_fk_tweets_fact_quality_checks = NullDataQualityOperator(
+    task_id='run_null_fk_tweets_fact_quality_checks',
+    dag=dag,
+    redshift_conn_id="redshift",
+    table = 'tweets.snscrape_tweets_hist',
+    values = ['coin_key','date_key']
+)
+
+"""
+*** Run Analysis Queries and Build Aggregate Table ***
+"""
+
+run_analysis_queries_and_build_aggregate_table = DataQualityOperator(
+    task_id='Run_analysis_queries_and_build_aggregate_table',
+    dag=dag,
+    redshift_conn_id="redshift",
+    queries = [analysis_queries.cg_coin_list_check,
+    analysis_queries.coin_stats_hist_check,
+    analysis_queries.snscrape_tweets_hist_check,
+    analysis_queries.max_and_min_price_per_month_usd]
+)
+
+"""
+*** Store End Result Dim, Fact and Aggregate Tables in S3 ***
+"""
 
 def redshift_to_s3_load():
     config = configparser.ConfigParser()
@@ -407,19 +481,9 @@ redshift_to_s3 = PythonOperator(
     dag=dag
 )
 
-run_quality_checks = DataQualityOperator(
-    task_id='Run_data_quality_checks',
-    dag=dag,
-    redshift_conn_id="redshift",
-    queries = [analysis_queries.cg_coin_list_check,
-    analysis_queries.coin_stats_hist_check,
-    analysis_queries.snscrape_tweets_hist_check,
-    analysis_queries.max_and_min_price_per_month_usd]
-)
-
-##
-###  Delete Cluster
-##
+"""
+*** DELETE CLUSTER ***
+"""
 def delete_cluster():
     config = configparser.ConfigParser()
     config.read_file(open('dwh.cfg'))
@@ -516,11 +580,11 @@ def delete_cluster():
             print('cluster deleted')
         
 
-delete_cluster = PythonOperator(
-    task_id='delete_cluster',
-    python_callable=delete_cluster,
-    dag=dag
-)
+# delete_cluster = PythonOperator(
+#     task_id='delete_cluster',
+#     python_callable=delete_cluster,
+#     dag=dag
+# )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
 
@@ -531,17 +595,22 @@ create_schemas >> create_stg_tables
 create_stg_tables >> stage_cg_token_list_to_redshift
 create_stg_tables >> stage_snscrape_tweets_stg_to_redshift
 create_stg_tables >> stage_cg_hourly_to_redshift
+stage_cg_hourly_to_redshift >> load_date_dim_crypto_table
 stage_cg_token_list_to_redshift >> load_cg_coin_list_table
 stage_snscrape_tweets_stg_to_redshift >> load_date_dim_tweets_table
-stage_cg_hourly_to_redshift >> load_date_dim_crypto_table
-load_date_dim_crypto_table >> create_fact_tables
-load_date_dim_tweets_table >> create_fact_tables
+load_cg_coin_list_table >> run_null_pk_cg_coin_list_quality_checks
+load_date_dim_tweets_table >> load_date_dim_crypto_table >> run_null_pk_date_dim_quality_check
+run_null_pk_date_dim_quality_check >> create_fact_tables
+run_null_pk_cg_coin_list_quality_checks >> create_fact_tables
 create_fact_tables >> load_coin_stats_hist_table
 create_fact_tables >> load_snscrape_tweets_hist_table
-load_snscrape_tweets_hist_table >> run_quality_checks
-load_coin_stats_hist_table >> run_quality_checks
-run_quality_checks >> redshift_to_s3 
-redshift_to_s3 >> delete_cluster
-delete_cluster >> end_operator
+load_snscrape_tweets_hist_table >> run_null_fk_tweets_fact_quality_checks
+load_coin_stats_hist_table >> run_null_fk_coin_fact_quality_checks
+run_null_fk_tweets_fact_quality_checks >> run_analysis_queries_and_build_aggregate_table
+run_null_fk_coin_fact_quality_checks >> run_analysis_queries_and_build_aggregate_table
+run_analysis_queries_and_build_aggregate_table >> redshift_to_s3 
+redshift_to_s3 >> end_operator
+# delete_cluster
+# delete_cluster >> 
 
 

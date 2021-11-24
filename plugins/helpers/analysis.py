@@ -30,6 +30,18 @@ class analysis_queries:
         LIMIT 10;
     """
 
+    tweets_and_crypto_stats_same_day = """
+        SELECT dt."date", coin_symbol, tweet, price, market_cap, total_volumes
+        FROM crypto.coin_stats_hist coin
+        JOIN tweets.snscrape_tweets_hist tweet
+            ON coin.date_key = tweet.date_key
+            AND coin.coin_key = tweet.coin_key
+        JOIN dim.date_dim dt
+            ON dt.date_key = coin.date_key
+            AND dt.date_key = tweet.date_key
+        LIMIT 5;
+    """
+
     max_and_min_price_per_month_usd = """
     DROP TABLE IF EXISTS crypto.usd_price_per_month_stats;
 

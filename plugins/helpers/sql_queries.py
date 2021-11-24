@@ -121,7 +121,7 @@ class SqlQueries:
             year,
             weekday
             )
-        SELECT "date", extract(hour from "date") as hour, extract(day from "date") as day, extract(week from "date") as date, 
+        SELECT "date", extract(hour from "date") as hour, extract(day from "date") as day, extract(week from "date") as week, 
                extract(month from "date") as month, extract(year from "date") as year, extract(dayofweek from "date") as dayofweek
         FROM crypto.cg_hourly_stg
         """
