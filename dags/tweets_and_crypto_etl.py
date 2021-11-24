@@ -580,11 +580,11 @@ def delete_cluster():
             print('cluster deleted')
         
 
-# delete_cluster = PythonOperator(
-#     task_id='delete_cluster',
-#     python_callable=delete_cluster,
-#     dag=dag
-# )
+delete_cluster = PythonOperator(
+    task_id='delete_cluster',
+    python_callable=delete_cluster,
+    dag=dag
+)
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
 
@@ -609,8 +609,6 @@ load_coin_stats_hist_table >> run_null_fk_coin_fact_quality_checks
 run_null_fk_tweets_fact_quality_checks >> run_analysis_queries_and_build_aggregate_table
 run_null_fk_coin_fact_quality_checks >> run_analysis_queries_and_build_aggregate_table
 run_analysis_queries_and_build_aggregate_table >> redshift_to_s3 
-redshift_to_s3 >> end_operator
-# delete_cluster
-# delete_cluster >> 
-
+redshift_to_s3 >> delete_cluster
+delete_cluster >> end_operator
 

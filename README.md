@@ -65,6 +65,7 @@ Ultimately, I choose to follow a similar process to what is in the mkg_airflow r
 * plugins/operators/load_fact.py
 * plugins/helpers/analysis.py
 * plugins/operators/data_quality.py
+* plugins/operators/null_data_quality_check.py
 
 #### Data Model
 
