@@ -87,22 +87,60 @@ Ultimately, this data model was chosen as the end state will be combining crypto
 2. Create Crypto, Tweets, and Dim Schemas
 3. Create Crypto/Tweets staging and Dim Tables
 4. Staging
-  1. Stage Coingecko Token List Mapping Table
-  2. Stage Coingecko hourly crypto currency statistical table
-  3. Stage snscrape tweets crypto twitter table
+  * Stage Coingecko Token List Mapping Table
+  * Stage Coingecko hourly crypto currency statistical table
+  * Stage snscrape tweets crypto twitter table
 5. Load Dimensions
-  1. Load Coingecko Token List Mapping Table
-  2. Load Date Dim with date information from Coingecko hourly crypto currency statistical staging table
-  3. Load Date Dim with date information from Stage snscrape tweets crypto twitter staging table
-6. Create Fact Tables
-7. Load Fact Tables
-  1. Load crypto currency statistics history table
-  2. Load snscrape tweets history table
-8. Run Data Quality Checks
-  1. Select Statements that make sure data is actually present
-  2. Build an Aggregate table with min statistic and max statistic values per month from the coin_stats_hist table
-9. Store resulting dim, fact and aggregate tables in S3
-10. Delete Redshift Cluster
+  * Load Coingecko Token List Mapping Table
+  * Load Date Dim with date information from Coingecko hourly crypto currency statistical staging table
+  * Load Date Dim with date information from Stage snscrape tweets crypto twitter staging table
+6. Run Primary Key Data Quality Check
+  * Checks both Date Dimension and Coingecko Coinlist Dimension for primary key validility
+7. Create Fact Tables
+8. Load Fact Tables
+  * Load crypto currency statistics history table
+  * Load snscrape tweets history table
+9. Run Foreign Key Data Quality Check
+  * Checks both snscrape_tweets_hist and coin_stats_hist for foreign key validility
+10. Run Aggregate Analysis Quality Checks
+  * Select Statements that make sure data is actually present
+  * Build an Aggregate table with min statistic and max statistic values per month from the coin_stats_hist table
+11. Store resulting dim, fact and aggregate tables in S3
+12. Delete Redshift Cluster
+
+#### Data Quality Check Explanation
+* In step 6, we do a primary key validility check to ensure both date_key in date_dim and coin_key in cg_coin_list are not null.
+The reason why we do this primary key check is to ensure the primary keys were instantiated correctly, and no row in either table will
+have any nulls.  If the table does have nulls then an exception is raised through the NullDataQuality operator.
+
+* In step 9, we do a foreign key validility check to ensure that both date_key and coin_key in the tables snscrape_tweets_hist and coin_stats_hist are valid.  We would like both foreign keys to be accurate and non-null for accurate analysis to be done when joining together with the dimensional tables.  Furthermore, in future work we will be using these foreign keys to run additional analysis, so they must be non-null for said purposes.
+
+* In step 10, we run select statements on each of the fact and dimensional tables to just do a quick analytical check of the tables.  Afterwards we build an aggregate table based on the min statistic and max static values per month from the coin_stats_hist table.  Eventually, these stats will be combined with a monthly tweet sentiment to determine crypto twitter's market sentiment based off monthly price action.
+
+### Data Dictionary and Data Model Validility
+
+Regarding data model validility this select statement will test all the relationships we have between our end-result tables:
+
+SELECT dt."date", coin_symbol, tweet, price, market_cap, total_volumes
+FROM crypto.coin_stats_hist coin
+JOIN tweets.snscrape_tweets_hist tweet
+	ON coin.date_key = tweet.date_key
+    AND coin.coin_key = tweet.coin_key
+JOIN dim.date_dim dt
+	ON dt.date_key = coin.date_key
+    AND dt.date_key = tweet.date_key
+LIMIT 5 ;
+
+Results in:
+```json
+[
+    {"date":"2017-01-22 00:00:00","coin_symbol":"eth","tweet":"#Bitcoin: $924.155 | €864.014 \n#Litecoin: $3.87 | ฿0.00424 \n#Ethereum: $10.8 | ฿0.0118 \n$BTC $LTC $ETH #ASX #NZSX #JPK","price":"10.74535","market_cap":"947279384.77","total_volumes":"5158451.37"},
+    {"date":"2017-01-14 00:00:00","coin_symbol":"eth","tweet":"#Bitcoin: $828.085 | €783.523 \n#Litecoin: $3.88 | ฿0.00476 \n#Ethereum: $9.68 | ฿0.0117 \n$BTC $LTC $ETH #ASX #NZSX #JPK","price":"9.69526","market_cap":"852254946.17","total_volumes":"4879177.65"},
+    {"date":"2017-01-14 00:00:00","coin_symbol":"ltc","tweet":"#Bitcoin: $828.085 | €783.523 \n#Litecoin: $3.88 | ฿0.00476 \n#Ethereum: $9.68 | ฿0.0117 \n$BTC $LTC $ETH #ASX #NZSX #JPK","price":"3.96449","market_cap":"195592082","total_volumes":"157639764.72"},
+    {"date":"2017-01-14 00:00:00","coin_symbol":"ltc","tweet":"#Bitcoin: $828.085 | €783.523 \n#Litecoin: $3.88 | ฿0.00476 \n#Ethereum: $9.68 | ฿0.0117 \n$BTC $LTC $ETH #ASX #NZSX #JPK","price":"3.96449","market_cap":"195592082","total_volumes":"157639764.72"},
+    {"date":"2017-01-29 00:00:00","coin_symbol":"eth","tweet":"#Bitcoin: $921.163 | €862.116 \n#Litecoin: $3.83 | ฿0.00419 \n#Ethereum: $10.5 | ฿0.0115 \n$BTC $LTC $ETH #ASX #NZSX #JPK","price":"10.43044","market_cap":"921810453.39","total_volumes":"3291646.73"}
+]
+```
 
 ### Future Work and Final Thoughts
 
