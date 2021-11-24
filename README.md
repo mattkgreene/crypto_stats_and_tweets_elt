@@ -119,8 +119,10 @@ have any nulls.  If the table does have nulls then an exception is raised throug
 
 ### Data Dictionary and Data Model Validility
 
+#### Data Model Validility
 Regarding data model validility this select statement will test all the relationships we have between our end-result tables:
 
+``` sql
 SELECT dt."date", coin_symbol, tweet, price, market_cap, total_volumes
 FROM crypto.coin_stats_hist coin
 JOIN tweets.snscrape_tweets_hist tweet
@@ -130,8 +132,10 @@ JOIN dim.date_dim dt
 	ON dt.date_key = coin.date_key
     AND dt.date_key = tweet.date_key
 LIMIT 5 ;
+```
 
 Results in:
+
 ```json
 [
     {"date":"2017-01-22 00:00:00","coin_symbol":"eth","tweet":"#Bitcoin: $924.155 | €864.014 \n#Litecoin: $3.87 | ฿0.00424 \n#Ethereum: $10.8 | ฿0.0118 \n$BTC $LTC $ETH #ASX #NZSX #JPK","price":"10.74535","market_cap":"947279384.77","total_volumes":"5158451.37"},
@@ -141,6 +145,58 @@ Results in:
     {"date":"2017-01-29 00:00:00","coin_symbol":"eth","tweet":"#Bitcoin: $921.163 | €862.116 \n#Litecoin: $3.83 | ฿0.00419 \n#Ethereum: $10.5 | ฿0.0115 \n$BTC $LTC $ETH #ASX #NZSX #JPK","price":"10.43044","market_cap":"921810453.39","total_volumes":"3291646.73"}
 ]
 ```
+
+#### Data Dictionary
+
+Column Names and Definitions for Final Dimension and Fact Tables
+
+##### Dimensions
+
+crypto.cg_coin_list:
+| Column Name | Description                                               |
+|-------------|-----------------------------------------------------------|
+| coin_key    | primary key generated through Redshifts identity function |
+| coin_id     | crypto currency coin identifier used by coingecko         |
+| symbol      | crypto currency symbol                                    |
+| name        | crypto currency name                                      |
+
+dim.date_dim:
+| Column Name | Description                                               |
+|-------------|-----------------------------------------------------------|
+| date_key    | primary key generated through Redshifts identity function |
+| date        | date snapshot for tweet data and crypto statistics data   |
+| hour        | hour extracted from the date attribute                    |
+| day         | day extracted from the date attribute                     |
+| week        | week extracted from the date attribute                    |
+| month       | month extracted from the date attribute                   |
+| year        | year extracted from the date attribute                    |
+| weekday     | weekday extracted from the date attribute                 |
+
+##### Fact Tables
+
+crypto.coin_stats_hist:
+| Column Name   | Description                                                 |
+|---------------|-------------------------------------------------------------|
+| date_key      | foreign key that references date_key in dim.date_dim        |
+| coin_key      | foreign key that references coin_key in crypto.cg_coin_list |
+| date          | date snapshot for crypto statistics                         |
+| coin_name     | crypto currency coin name for statistics extracted          |
+| coin_symbol   | crypto currency coin symbol for statistics extracted        |
+| price         | crypto currency's price during snapshot                     |
+| market_cap    | crypto currency's market cap during snapshot                |
+| total_volumes | crypto currency's total volumes during snapshot             |
+
+tweets.snscrape_tweets_hist:
+| Column Name | Description                                                            |
+|-------------|------------------------------------------------------------------------|
+| date_key    | foreign key that references date_key in dim.date_dim                   |
+| coin_key    | foreign key that references coin_key in crypto.cg_coin_list            |
+| date        | date snapshot for tweet data                                           |
+| tweet_id    | twitter's tweet identifier for the tweet in this row                   |
+| coin_name   | crypto currency coin name for statistics extracted                     |
+| tweet       | the text of the tweet wrangled from twitter.com                        |
+| username    | the username of the account that sent the tweet                        |
+| search_term | search term being used in the snscrape_tweets twitter data aggregation |
 
 ### Future Work and Final Thoughts
 
